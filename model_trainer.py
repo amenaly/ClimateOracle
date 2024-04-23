@@ -1,9 +1,10 @@
 # model_trainer
-
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.linear_model import LinearRegression
-
+# This class is for training the model. The model is trained using the DecisionTreeRegressor
+# from the sklearn library. The data is split into training and testing sets using the train_test_split
+# function from the sklearn library. The model is then trained using the fit function.
+# The feature names are set if provided. The model is then returned along with the testing data.
 
 class ModelTrainer:
     @staticmethod
