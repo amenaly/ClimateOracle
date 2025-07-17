@@ -8,17 +8,21 @@ import pandas as pd
 import seaborn as sns
 
 # This is the main file that will be run to execute the program. It will fetch the weather data, preprocess the data,
-# train the model, evaluate the model, and predict the next year's weather data. It will also plot the data and predictions.
+# train the model, evaluate the model, and predict the next year's weather data.
+# It will also plot the data and predictions.
 
 # parameters
 # St. Johnsbury Fairbanks Test 72614
 # London Heathrow Airport Test 03772
-# San Antoino- Lackland Air Force Base Test KSKF0
+# San Antonio- Lackland Air Force Base Test KSKF0
+# Uvalde Garner Field Test KUVA0
 station_id = 'KSKF0'
+# South Llano River State Park, Texas, USA 74740
+#Inks Lake State Park, Texas, USA 74750 KDZB0
 
 # Check weird error with the date! 1/1/2021-12/31/2021 works
-start_date = datetime(2023, 1, 1)
-end_date = datetime(2023, 12, 31)
+start_date = datetime(2021, 1, 1)
+end_date = datetime(2024, 12, 31)
 
 # Call DataHandler to fetch data
 data_handler = DataHandler()
@@ -32,6 +36,7 @@ data.drop(['wspd'], axis=1, inplace=True)
 
 # print out the table
 # print(data.head()) this will print out the first 5 rows of the data
+
 print(data)
 
 # train model and get testing data
@@ -54,33 +59,49 @@ mse_percentage, mae_percentage = model_evaluator.evaluate_model(model, X_test, y
 print(f'Mean Squared Error: {mse_percentage:.2f}%')
 print(f'Mean Absolute Error: {mae_percentage:.2f}%')
 
-#Next Year Predictions 1 Means it going to be warmer than last year, 0 means it will be colder
+# Next Year Predictions 1 Means it's going to be warmer than last year, 0 means it will be colder
 
-#create list of dates
+# create list of dates
 current_year = datetime.now().year
 start_date_next = datetime(current_year, 1, 1)
-end_date_next = datetime(current_year, 11, 30)
+end_date_next = datetime(current_year, 12, 31)
 # for SA has to change to 11,30 for some reason, believe data is not available for December
 
-dates_next_year = pd.date_range(start_date_next, end_date_next, freq='MS') #MS is month start frequency
+dates_next_year = pd.date_range(start_date_next, end_date_next, freq='MS')  # MS is month start frequency
+dates_next_year = dates_next_year[:len(data.index)] # Ensure the length matches the data index
+
+#debugging mismatch dates error
+# print(f"Length of next_year_predictions: {len(next_year_predictions)}")
+# print(f"Length of dates_next_year: {len(dates_next_year)}")
+# print(f"Length of data.index: {len(data.index)}")
+
+# print("Dates Generated for 2024:", dates_next_year)  # List of all expected months
+# print("Actual Data Index for 2024:", data.index)  # What your dataset contains
+# print("Missing Months:", set(dates_next_year) - set(data.index))  # Show missing months
 
 # Create a DataFrame with the predictions
 next_year_predictions_df = pd.DataFrame({
-    'tavg': [tavg for tavg in next_year_predictions],  # Assuming next_year_predictions contains temperatures
-    'tmin': [tmin for tmin in next_year_predictions],  # Assuming next_year_predictions contains temperatures
-    'tmax': [tmax for tmax in next_year_predictions],  # Assuming next_year_predictions contains temperatures
-    # 'prcp': [prcp for prcp in next_year_predictions],  # Assuming next_year_predictions contains precipitation
-    # 'temperature_diff': [tmax - tmin for tmin, tmax in zip(next_year_predictions, next_year_predictions)],
-    # # Calculate temperature difference
-    # 'warmer_than_average': next_year_predictions  # Assuming next_year_predictions contains binary values
+     'tavg': next_year_predictions[:len(dates_next_year)],  # Assuming next_year_predictions contains temperatures
+     'tmin': next_year_predictions[:len(dates_next_year)],  # Assuming next_year_predictions contains temperatures
+     'tmax': next_year_predictions[:len(dates_next_year)],  # Assuming next_year_predictions contains temperatures
+# 'prcp': [prcp for prcp in next_year_predictions],  # Assuming next_year_predictions contains precipitation
+#     # 'temperature_diff': [tmax - tmin for tmin, tmax in zip(next_year_predictions, next_year_predictions)],
+#     # # Calculate temperature difference
+#     # 'warmer_than_average': next_year_predictions  # Assuming next_year_predictions contains binary values
+#
+#     # Use the predictions directly
+}, index=dates_next_year)  # set the date as index
 
-    # Use the predictions directly
-} , index=dates_next_year) # set the date as index
- # Reindex the DataFrame to match the original data
-predicted_temperatures = next_year_predictions_df.reindex(data.index, fill_value=0)
+# Reindex the DataFrame to match the original data
+predicted_temperatures = next_year_predictions_df.reindex(dates_next_year, fill_value=0)
 
 # print Prediction
-#, start_date_next, "-", end_date_next
+# start_date_next, "-", end_date_next
+
+#debugging
+# print(type(next_year_predictions))
+# print(next_year_predictions)  # Inspect the structure
+
 print("Next Year Prediction:")
 print(next_year_predictions_df)
 
@@ -96,17 +117,15 @@ data['predicted_tmax'] = predicted_temperatures['tmax']
 # plot prediction + visualization of the data
 sns.set(style="whitegrid")  # set style of seaborn plot to whitegrid
 data['next_year_prediction_df'] = model.predict(X)  # generates predictions for the target variable
-data[['tavg', 'tmax', 'tmin']].plot(alpha=0.5)
+data[['tavg', 'tmax', 'tmin']].plot(alpha=0.5) # filter out the columns we want to plot and set transparency to 50%
 plt.xlabel('Date')  # set x-axis label
 plt.ylabel('Temperature')  # set y-axis label
-plt.title('Temperatures of 2023')  # set title of plot
+plt.title('Temperatures of 2024')  # set title of plot
 
 # Plot Predicted Temperatures of 2024
 predicted_temperatures[['tavg']].plot(alpha=0.5)
 # plots both the actual values and predicted values, alpha sets parearemt of lines to 50%
 plt.xlabel('Date')  # set x-axis label
 plt.ylabel('Temperature')  # set y-axis label
-plt.title('Predicted Temps of 2024')  # set title of plot
+plt.title('Predicted Temps of 2025')  # set title of plot
 plt.show()  # display the plot
-
-
